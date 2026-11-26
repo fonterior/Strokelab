@@ -1,0 +1,20 @@
+# Automatically normalize line endings
+* text=auto
+
+# Python and documentation
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+
+# License and metadata
+LICENSE text eol=lf
+*.cff text eol=lf
+
+# Images and fonts are binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.otf binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
