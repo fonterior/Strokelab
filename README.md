@@ -14,6 +14,10 @@ StrokeLab is an experimental font-design utility that analyzes glyph outlines as
 
 > StrokeLab is source-available under a noncommercial license. It is not an OSI-approved Open Source project because commercial use is restricted.
 
+## Screenshot
+
+![StrokeLab interface](strokelab-screenshot.png)
+
 ## What it does
 
 StrokeLab works with the vector outlines stored in font files. It does not rasterize glyphs and does not use a Voronoi diagram as the basis of its analysis.
