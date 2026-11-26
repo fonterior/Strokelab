@@ -47,7 +47,7 @@ StrokeLab: общая ось буквы и предсказание тонког
     pip install glyphsLib ufoLib2  # необязательно: экспорт в Glyphs 3 (UFO/Designspace работают без них)
 
 Запуск:
-    python strokelab.py [путь_к_шрифту.otf]
+    python Strokelab.py [путь_к_шрифту.otf]
 Шрифт можно перетащить мышью в окно.
 
 Управление на холсте:
