@@ -1,0 +1,6 @@
+# Optional: boolean/path operations for removing overlapping contours.
+skia-pathops
+
+# Optional: extended UFO / Designspace / Glyphs export workflows.
+glyphsLib
+ufoLib2

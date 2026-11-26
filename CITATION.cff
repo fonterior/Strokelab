@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use StrokeLab in research or a project, please cite it using the following metadata."
+title: "StrokeLab"
+authors:
+  - family-names: "Kudryavtsev"
+    given-names: "Andrey"
+type: software
+repository-code: "https://github.com/fonterior/strokelab"
+license: "PolyForm-Noncommercial-1.0.0"

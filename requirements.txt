@@ -1,0 +1,4 @@
+# Required runtime dependencies for StrokeLab.
+# Tested/recommended baseline: Python 3.11 or newer.
+fonttools
+PySide6
