@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# Required Notice: Copyright (c) 2026 Andrey Kudryavtsev
+# Required Notice: StrokeLab - https://github.com/fonterior/strokelab
+
 """
 StrokeLab, этап 3: общая ось буквы и предсказание тонкого начертания.
 
