@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
-# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
-# Required Notice: Copyright (c) 2026 Andrey Kudryavtsev
-# Required Notice: StrokeLab - https://github.com/fonterior/strokelab
-
 """
-StrokeLab: общая ось буквы и предсказание тонкого начертания.
+StrokeLab, этап 3: общая ось буквы и предсказание тонкого начертания.
 
 Разбор по векторным данным шрифта, без растра и без диаграммы Вороного.
 
@@ -41,13 +37,13 @@ StrokeLab: общая ось буквы и предсказание тонког
       в тонком начертании уменьшаются вокруг центра. Стык T по умолчанию прямой: круговой вход
       в стойку применяется только когда конец почти параллелен ей.
 
-Установка (Windows 10+, Python 3.9+):
+Установка (Windows 10, Python 3.9+):
     pip install fonttools PySide6
     pip install skia-pathops      # необязательно: удаление наложений контуров
     pip install glyphsLib ufoLib2  # необязательно: экспорт в Glyphs 3 (UFO/Designspace работают без них)
 
 Запуск:
-    python Strokelab.py [путь_к_шрифту.otf]
+    python strokelab.py [путь_к_шрифту.otf]
 Шрифт можно перетащить мышью в окно.
 
 Управление на холсте:
@@ -392,26 +388,29 @@ class FontStore:
 @dataclass
 class Params:
     smooth_deg: float = 45.0  # узел с изломом не больше этого угла считается гладким
-    flat_tol: float = 2.0  # кривая, отклоняющаяся от хорды не больше, считается прямой (ед. шрифта)
+    flat_tol: float = 4.0  # кривая, отклоняющаяся от хорды не больше, считается прямой (ед. шрифта)
     split_extrema: bool = False  # резать кривые в экстремумах
     split_inflections: bool = False  # резать кривые в точках перегиба
-    remove_overlaps: bool = False  # удалять наложения контуров (нужен skia-pathops)
+    remove_overlaps: bool = True  # удалять наложения контуров (нужен skia-pathops)
     max_dev: float = 22.0  # макс. отклонение нормалей двух сторон штриха, градусы
-    disc_slack: float = 0.7  # строгость проверки пустого круга (0.5 мягко .. 1.0 строго)
+    disc_slack: float = 1.0  # строгость проверки пустого круга (0.5 мягко .. 1.0 строго)
     merge_deg: float = 45.0  # допуск угла при склейке осей-дуг, градусы
-    line_merge_deg: float = 15.0  # допуск угла при склейке осей-прямых, градусы (меньше, иначе ветвь Y слипается со стойкой)
-    gap_factor: float = 6.0  # макс. разрыв при склейке, в толщинах штриха
-    blob_ratio: float = 0.0  # штрих короче этого числа толщин считается пятном (0: не применять)
-    allow_mixed: bool = False  # разрешить пары «прямая + дуга» (по умолчанию такие пары считаются ошибочными)
-    dot_ratio: float = 1.8  # отдельная деталь не крупнее этого числа толщин: точка (i, j, двоеточие); 0: не искать
+    line_merge_deg: float = 5.0  # допуск угла при склейке осей-прямых, градусы (меньше, иначе ветвь Y слипается со стойкой)
+    gap_factor: float = 0.5  # макс. разрыв при склейке, в толщинах штриха
+    blob_ratio: float = 0.5  # штрих короче этого числа толщин считается пятном (0: не применять)
+    allow_mixed: bool = True  # разрешить пары «прямая + дуга» (по умолчанию такие пары считаются ошибочными)
+    dot_ratio: float = 1.5  # отдельная деталь не крупнее этого числа толщин: точка (i, j, двоеточие); 0: не искать
     smooth_joints: bool = True  # сглаживать стыки кусков оси (усы на одной прямой с узлом)
-    snap_deg: float = 15.0  # касательная в стыке ближе этого угла к горизонтали или вертикали: точно по ней
+    snap_deg: float = 25.0  # касательная в стыке ближе этого угла к горизонтали или вертикали: точно по ней
     join_axes: bool = True  # соединять оси штрихов в общую ось
     ext_factor: float = 1.2  # макс. продление оси к стыку, в толщинах штриха
-    min_support: int = 1  # сколько вогнутых углов контура должно быть рядом со стыком
-    term_factor: float = 0.3  # конец штриха, перед которым торец ближе этой доли толщины, считается торцом
-    cap_factor: float = 2.0  # свободный конец достраивается до видимого торца, если он ближе (в толщинах); 0: не достраивать
+    min_support: int = 2  # сколько вогнутых углов контура должно быть рядом со стыком
+    term_factor: float = 0.5  # конец штриха, перед которым торец ближе этой доли толщины, считается торцом
+    cap_factor: float = 5.0  # свободный конец достраивается до видимого торца, если он ближе (в толщинах); 0: не достраивать
     thin_ratio: float = 0.4  # толщина предсказываемого тонкого начертания: доля от исходной
+    arm_continue: bool = True  # чаша b, d, p, q: от вершины чаши ось идёт одной дугой окружности и садится на ось стойки под углом arm_angle
+    arm_angle: float = 38.0  # угол входа этой дуги в ось стойки, градусы (меньше: положе и ниже в стойке, больше: круче и выше)
+    medial_joints: bool = True  # стыки дуг: ось ведётся по настоящей середине контура (круг, касающийся двух сторон), а не по шаблонной кривой
 
 
 @dataclass(eq=False)
@@ -691,6 +690,7 @@ class Piece:
     t_end: Pt
     ta: Tuple[float, float]
     tb: Tuple[float, float]
+    axis_parts: List[Cubic] = field(default_factory=list, repr=False)
 
 
 @dataclass(eq=False)
@@ -720,37 +720,179 @@ class Stroke:
 
 
 def fit_axis(m: List[Pt], flat_tol: float) -> Tuple[str, Cubic]:
-    """Прямая или кубика Безье по точкам оси."""
+    """Аппроксимирует измеренные середины отрезков прямой или кубикой Безье.
+
+    В отличие от прежней версии, короткий набор из трёх точек не превращается
+    автоматически в прямую. Для кривых используется параметризация по длине
+    измеренной ломаной и аппроксимация с учётом касательных на концах.
+    """
+    if not m:
+        p = (0.0, 0.0)
+        return "line", line_cubic(p, p)
+
+    # Удаляем подряд идущие практически совпадающие измерения: они ухудшают
+    # параметризацию и могут сделать систему аппроксимации вырожденной.
+    pts: List[Pt] = [m[0]]
+    for q in m[1:]:
+        if dist(pts[-1], q) > 1e-7:
+            pts.append(q)
+    m = pts
+    if len(m) == 1:
+        return "line", line_cubic(m[0], m[0])
+
     p0, p3 = m[0], m[-1]
-    chord = dist(p0, p3)
+    chord_vec = vsub(p3, p0)
+    chord = math.hypot(chord_vec[0], chord_vec[1])
     if chord < 1e-6:
+        # Замкнувшийся короткий фрагмент не имеет надёжного направления.
+        return "arc", (p0, m[len(m) // 3], m[(2 * len(m)) // 3], p3)
+    if len(m) == 2:
         return "line", line_cubic(p0, p3)
-    dev = max(abs(vcross(vsub(p3, p0), vsub(q, p0))) / chord for q in m)
-    if dev <= max(flat_tol, 0.01 * chord) or len(m) < 4:
+
+    dev = max(abs(vcross(chord_vec, vsub(q, p0))) / chord for q in m)
+    if dev <= max(flat_tol, 0.01 * chord):
         return "line", line_cubic(p0, p3)
+
+    # Параметры точек по длине ломаной, а не по равномерному индексу.
     d = [0.0]
     for i in range(1, len(m)):
         d.append(d[-1] + dist(m[i - 1], m[i]))
     total = d[-1]
-    a11 = a12 = a22 = 0.0
-    r1 = [0.0, 0.0]
-    r2 = [0.0, 0.0]
-    for di, q in zip(d, m):
-        t = di / total
-        b0, b1, b2, b3 = (1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t * t, t ** 3
+    if total < 1e-8:
+        return "line", line_cubic(p0, p3)
+    ts = [x / total for x in d]
+
+    def max_fit_error(c: Cubic) -> float:
+        return max(dist(bez_pt(c, t), q) for t, q in zip(ts, m))
+
+    # При трёх точках строим квадратичную кривую, преобразованную в кубическую.
+    # Она точно проходит через среднее измерение и не получает неустойчивые ручки.
+    if len(m) == 3:
+        t = ts[1]
+        den = 2.0 * (1.0 - t) * t
+        if den > 1e-9:
+            mt = 1.0 - t
+            qmid = ((m[1][0] - mt * mt * p0[0] - t * t * p3[0]) / den,
+                    (m[1][1] - mt * mt * p0[1] - t * t * p3[1]) / den)
+            q1 = (p0[0] + (2.0 / 3.0) * (qmid[0] - p0[0]),
+                  p0[1] + (2.0 / 3.0) * (qmid[1] - p0[1]))
+            q2 = (p3[0] + (2.0 / 3.0) * (qmid[0] - p3[0]),
+                  p3[1] + (2.0 / 3.0) * (qmid[1] - p3[1]))
+            return "arc", (p0, q1, q2, p3)
+
+    # Касательные берутся по крайним измеренным участкам. Это сохраняет
+    # направление оси в местах, где фрагмент заканчивается у перемычки.
+    t0 = vunit(vsub(m[1], m[0])) or vunit(chord_vec) or (1.0, 0.0)
+    t1 = vunit(vsub(m[-1], m[-2])) or vunit(chord_vec) or (1.0, 0.0)
+
+    # Сначала строим кубику с управляющими точками на касательных:
+    # P1 = P0 + alpha*T0, P2 = P3 - beta*T1.
+    # alpha и beta подбираются совместно методом наименьших квадратов.
+    a11 = a12 = a22 = r1 = r2 = 0.0
+    tangent_dot = vdot(t0, t1)
+    for t, q in zip(ts[1:-1], m[1:-1]):
+        mt = 1.0 - t
+        b0 = mt * mt * mt
+        b1 = 3.0 * mt * mt * t
+        b2 = 3.0 * mt * t * t
+        b3 = t * t * t
+        base = ((b0 + b1) * p0[0] + (b2 + b3) * p3[0],
+                (b0 + b1) * p0[1] + (b2 + b3) * p3[1])
+        residual = vsub(q, base)
         a11 += b1 * b1
-        a12 += b1 * b2
+        a12 -= b1 * b2 * tangent_dot
         a22 += b2 * b2
-        for k in (0, 1):
-            rk = q[k] - b0 * p0[k] - b3 * p3[k]
-            r1[k] += b1 * rk
-            r2[k] += b2 * rk
+        r1 += b1 * vdot(t0, residual)
+        r2 -= b2 * vdot(t1, residual)
+
     det = a11 * a22 - a12 * a12
-    if abs(det) < 1e-12:
+    constrained: Optional[Cubic] = None
+    if abs(det) > 1e-12:
+        alpha = (r1 * a22 - r2 * a12) / det
+        beta = (a11 * r2 - a12 * r1) / det
+        # Не допускаем отрицательные или чрезмерно длинные ручки: они часто
+        # означают, что несколько точек описывают сложную форму, а не одну дугу.
+        handle_limit = 2.0 * total
+        alpha = max(0.0, min(handle_limit, alpha))
+        beta = max(0.0, min(handle_limit, beta))
+        p1 = (p0[0] + t0[0] * alpha, p0[1] + t0[1] * alpha)
+        p2 = (p3[0] - t1[0] * beta, p3[1] - t1[1] * beta)
+        constrained = (p0, p1, p2, p3)
+
+    # Обычная свободная кубическая аппроксимация остаётся запасным вариантом
+    # для кривых, чьи крайние касательные оценены нестабильно.
+    free: Optional[Cubic] = None
+    if len(m) >= 4:
+        f11 = f12 = f22 = 0.0
+        fr1 = [0.0, 0.0]
+        fr2 = [0.0, 0.0]
+        for t, q in zip(ts, m):
+            mt = 1.0 - t
+            b0, b1, b2, b3 = mt ** 3, 3 * mt * mt * t, 3 * mt * t * t, t ** 3
+            f11 += b1 * b1
+            f12 += b1 * b2
+            f22 += b2 * b2
+            for k in (0, 1):
+                residual = q[k] - b0 * p0[k] - b3 * p3[k]
+                fr1[k] += b1 * residual
+                fr2[k] += b2 * residual
+        fdet = f11 * f22 - f12 * f12
+        if abs(fdet) > 1e-12:
+            fp1 = tuple((f22 * fr1[k] - f12 * fr2[k]) / fdet for k in (0, 1))
+            fp2 = tuple((f11 * fr2[k] - f12 * fr1[k]) / fdet for k in (0, 1))
+            free = (p0, fp1, fp2, p3)  # type: ignore[assignment]
+
+    candidates = [c for c in (constrained, free) if c is not None]
+    if not candidates:
         return "arc", (p0, lerp(p0, p3, 1 / 3), lerp(p0, p3, 2 / 3), p3)
-    p1 = tuple((a22 * r1[k] - a12 * r2[k]) / det for k in (0, 1))
-    p2 = tuple((a11 * r2[k] - a12 * r1[k]) / det for k in (0, 1))
-    return "arc", (p0, p1, p2, p3)  # type: ignore[return-value]
+
+    # Предпочитаем касательно-согласованную кривую, пока её ошибка не намного
+    # больше ошибки свободной аппроксимации. Это уменьшает изломы между частями.
+    errors = {id(c): max_fit_error(c) for c in candidates}
+    best = min(candidates, key=lambda c: errors[id(c)])
+    if constrained is not None and best is not constrained:
+        constrained_error = errors[id(constrained)]
+        best_error = errors[id(best)]
+        if constrained_error <= best_error * 1.15 + max(0.25, flat_tol * 0.25):
+            best = constrained
+    return "arc", best
+
+
+def fit_axis_segments(m: List[Pt], flat_tol: float, max_error: float,
+                      max_depth: int = 4) -> List[Cubic]:
+    """Адаптивно аппроксимирует срединную линию одной или несколькими кубиками.
+
+    Сложный изгиб не заставляется помещаться в одну кубику: если максимальное
+    отклонение от измеренных середин слишком велико, набор делится в наиболее
+    проблемной внутренней точке. Соседние кубики при этом имеют общий узел.
+    """
+    if len(m) <= 4:
+        return [fit_axis(m, flat_tol)[1]]
+
+    kind, curve = fit_axis(m, flat_tol)
+    if kind == "line":
+        return [curve]
+
+    distances = [0.0]
+    for a, b in zip(m, m[1:]):
+        distances.append(distances[-1] + dist(a, b))
+    total = distances[-1]
+    if total <= 1e-8:
+        return [curve]
+    params = [d / total for d in distances]
+    errors = [dist(bez_pt(curve, t), q) for t, q in zip(params, m)]
+    worst = max(range(1, len(m) - 1), key=lambda i: errors[i])
+    if errors[worst] <= max_error or max_depth <= 0:
+        return [curve]
+
+    # Не допускаем вырожденные фрагменты из двух точек: обе части должны
+    # содержать хотя бы три измерения, если исходных данных достаточно.
+    split = max(2, min(len(m) - 3, worst))
+    if split < 2 or split > len(m) - 3:
+        return [curve]
+    left = fit_axis_segments(m[:split + 1], flat_tol, max_error, max_depth - 1)
+    right = fit_axis_segments(m[split:], flat_tol, max_error, max_depth - 1)
+    return left + right
 
 
 def close_gaps(chain: List[Cubic], closed: bool, tol: float) -> List[Cubic]:
@@ -1020,6 +1162,8 @@ class _StrokeFinder:
         W = sum(s[4] for s in samples) / len(samples)
         La = sum(dist(m[i], m[i + 1]) for i in range(len(m) - 1))
         kind, axis = fit_axis(m, self.prm.flat_tol)
+        axis_parts = ([axis] if kind == "line" else
+                      fit_axis_segments(m, self.prm.flat_tol, max(1.5 * self.prm.flat_tol, 0.05 * W)))
         # короткий кусок обычно пятно (середины лучей круглой точки сливаются, направление оси
         # неизвестно). Но у пары почти параллельных прямых сторон направление оси известно точно,
         # поэтому зажатая между стойками диагональ (и, й, N) остаётся штрихом
@@ -1030,10 +1174,11 @@ class _StrokeFinder:
                      B.length * (max(s[1] for s in samples) - min(s[1] for s in samples)))
         if kind == "blob" and extent < 0.2 * W:
             return None  # шум: лучи у самой границы рёбер
-        t0, t1 = end_tangents(axis)
+        t0 = end_tangents(axis_parts[0])[0]
+        t1 = end_tangents(axis_parts[-1])[1]
         tbs = [s[1] for s in samples]
         return Piece(A, B, samples, kind, axis, W, La, t0, t1,
-                     (samples[0][0], samples[-1][0]), (min(tbs), max(tbs)))
+                     (samples[0][0], samples[-1][0]), (min(tbs), max(tbs)), axis_parts)
 
     def collect(self) -> List[Piece]:
         pieces: List[Piece] = []
@@ -1069,8 +1214,16 @@ class _StrokeFinder:
         return 0 if abs(c) < 0.02 else (1 if c > 0 else -1)
 
     def _gap_inside(self, p: Pt, q: Pt) -> bool:
-        for f in (0.25, 0.5, 0.75):
-            if winding_number(lerp(p, q, f), self.a.polys) == 0:
+        """Проверяет весь предполагаемый мост, а не только три фиксированные точки.
+
+        Шаг выборки привязан к оценённой толщине штриха: узкая полость или вырез
+        между тремя прежними контрольными точками больше не остаётся незамеченным.
+        """
+        length = dist(p, q)
+        step = max(1.0, 0.25 * self.w_est)
+        n = max(3, min(64, int(math.ceil(length / step))))
+        for i in range(1, n):
+            if winding_number(lerp(p, q, i / n), self.a.polys) == 0:
                 return False
         return True
 
@@ -1127,17 +1280,28 @@ class _StrokeFinder:
         return True
 
     @staticmethod
-    def _chains(pieces: List[Piece], w: float) -> List[Tuple[List[Piece], List[Cubic], List[Piece]]]:
-        """Цепочки осей дуг: (куски, кубики, дубликаты). К концу цепочки приставляется только
-        кусок, который к нему примыкает (зазор не больше 1.2 толщины). Кусок, оба конца которого
-        лежат у уже собранной оси (дубликат соседа), в ось не входит. Далёкий кусок начинает
-        отдельную цепочку: иначе жадная сборка ставила его в конец, а мост через всю чашу давал заворот."""
+    def _chains(pieces: List[Piece], w: float, merge_deg: float = 45.0) -> List[Tuple[List[Piece], List[Cubic], List[Piece]]]:
+        """Собирает только действительно примыкающие фрагменты одной дуги.
+
+        Расстояние само по себе не считается достаточным основанием для склейки:
+        дополнительно проверяются направление касательных и локальная толщина.
+        Разрыв, который нельзя безопасно закрыть, остаётся отдельной осью и может
+        быть обработан позднее общим соединителем.
+        """
         rest = list(pieces)
         out: List[Tuple[List[Piece], List[Cubic], List[Piece]]] = []
-        max_gap = 1.2 * w
+        max_gap = 0.35 * max(w, 1e-6)
+        angle_limit = max(1.0, merge_deg)
 
         def ends(p):
             return (p.axis[0], p.axis[3])
+
+        def oriented_parts(p: Piece, reverse: bool = False) -> List[Cubic]:
+            parts = p.axis_parts or [p.axis]
+            return [_reverse_cubic(c) for c in reversed(parts)] if reverse else list(parts)
+
+        def endpoint_width(p: Piece, at_start: bool) -> float:
+            return p.samples[0][4] if at_start else p.samples[-1][4]
 
         while rest:
             if len(rest) == 1:
@@ -1150,23 +1314,47 @@ class _StrokeFinder:
                     if best is None or dm > best[0]:
                         best = (dm, p, k)
             _, start, k = best
+            first_parts = oriented_parts(start, reverse=(k == 1))
             chain_p = [start]
-            chain_c = [_reverse_cubic(start.axis) if k == 1 else start.axis]
+            chain_c = list(first_parts)
+            chain_end_width = endpoint_width(start, at_start=(k == 1))
             rest.remove(start)
+
             while True:
                 E = chain_c[-1][3]
-                bp = None
+                tangent_end = end_tangents(chain_c[-1])[1]
+                options = []
                 for r in rest:
                     for kk, e in enumerate(ends(r)):
-                        dd = dist(E, e)
-                        if bp is None or dd < bp[0]:
-                            bp = (dd, r, kk)
-                if bp is None or bp[0] > max_gap:
+                        gap = dist(E, e)
+                        if gap > max_gap:
+                            continue
+                        next_parts = oriented_parts(r, reverse=(kk == 1))
+                        tangent_next = end_tangents(next_parts[0])[0]
+                        turn = abs(angle_deg(tangent_end, tangent_next))
+                        if turn > angle_limit:
+                            continue
+                        join_width = endpoint_width(r, at_start=(kk == 0))
+                        far_width = endpoint_width(r, at_start=(kk == 1))
+                        if min(chain_end_width, join_width) <= 1e-6:
+                            continue
+                        width_ratio = max(chain_end_width, join_width) / min(chain_end_width, join_width)
+                        if width_ratio > 1.5:
+                            continue
+                        # Выбираем не просто ближайший фрагмент, а наиболее
+                        # согласованный по расстоянию, касательной и толщине.
+                        score = (gap / max(w, 1e-6)
+                                 + 0.25 * turn / angle_limit
+                                 + 0.15 * abs(math.log(width_ratio)))
+                        options.append((score, r, kk, next_parts, far_width))
+                if not options:
                     break
-                _, r, kk = bp
-                chain_c.append(r.axis if kk == 0 else _reverse_cubic(r.axis))
+                _, r, kk, next_parts, far_width = min(options, key=lambda item: item[0])
+                chain_c.extend(next_parts)
                 chain_p.append(r)
+                chain_end_width = far_width
                 rest.remove(r)
+
             poly = [q for c in chain_c for q in flatten(c, 8)]
             dups = [r for r in rest if all(dist_to_polyline(e, poly) <= 0.7 * w for e in ends(r))]
             for r in dups:
@@ -1304,7 +1492,8 @@ class _StrokeFinder:
                 length = dist(a0, a1)
             else:
                 blob_ps = [p for p in ps if p.kind == "blob"]
-                for ci, (cp, cc, dups) in enumerate(self._chains([p for p in ps if p.kind != "blob"], w_mean)):
+                for ci, (cp, cc, dups) in enumerate(
+                        self._chains([p for p in ps if p.kind != "blob"], w_mean, prm.merge_deg)):
                     pcs = cp + dups + (blob_ps if ci == 0 else [])
                     cws = [q[4] for p in pcs for q in p.samples]
                     cmean = sum(cws) / len(cws)
@@ -1312,8 +1501,9 @@ class _StrokeFinder:
                     if prm.blob_ratio > 0 and clen < prm.blob_ratio * cmean:
                         blobs.append((pcs, [q for p in pcs for sm in p.samples for q in (sm[2], sm[3])]))
                         continue
-                    closed = len(cc) > 1 and dist(cc[0][0], cc[-1][3]) < 0.6 * cmean
-                    axis = close_gaps(cc, closed, 0.35 * cmean)
+                    join_tolerance = 0.35 * cmean
+                    closed = len(cc) > 1 and dist(cc[0][0], cc[-1][3]) <= join_tolerance
+                    axis = close_gaps(cc, closed, join_tolerance)
                     if prm.smooth_joints:
                         axis = smooth_chain(axis, closed, prm.snap_deg)
                     strokes.append(Stroke(0, "arc", pcs, axis, [self._patch(p) for p in pcs],
@@ -1590,6 +1780,112 @@ def _resample(poly: List[Pt], step: float) -> List[Pt]:
     return out
 
 
+
+# ----------------------------------------------------------------------------
+#  Срединная ось по настоящему контуру.
+#  Точка оси в стыке — центр круга, который касается контура с двух сторон. Расстояние до
+#  контура считается по векторным рёбрам (прямые и кубики, с уточнением Ньютоном), так что
+#  вогнутые углы стыка (вырез между стойкой и чашей) работают как отдельные точки-опоры.
+#  Ось ведётся шагами: предсказание по касательной, затем поправка вдоль линии между
+#  ближайшими точками контура слева и справа, пока расстояния не сравняются.
+#  Растр и диаграмма Вороного не нужны.
+# ----------------------------------------------------------------------------
+
+
+def _bez_d2(p: Cubic, t: float) -> Pt:
+    mt = 1.0 - t
+    a = (p[2][0] - 2 * p[1][0] + p[0][0], p[2][1] - 2 * p[1][1] + p[0][1])
+    b = (p[3][0] - 2 * p[2][0] + p[1][0], p[3][1] - 2 * p[2][1] + p[1][1])
+    return (6.0 * (mt * a[0] + t * b[0]), 6.0 * (mt * a[1] + t * b[1]))
+
+
+def _edge_nearest(e: "Edge", c: Pt) -> Tuple[float, Pt]:
+    """Ближайшая к c точка ребра: (расстояние, точка). Для кривой уточняется по настоящей кубике."""
+    poly = e.poly
+    n = len(poly) - 1
+    best_d, best_q, best_t = 1e18, poly[0], 0.0
+    for i in range(n):
+        a, b = poly[i], poly[i + 1]
+        abx, aby = b[0] - a[0], b[1] - a[1]
+        l2 = abx * abx + aby * aby
+        u = 0.0 if l2 == 0 else max(0.0, min(1.0, ((c[0] - a[0]) * abx + (c[1] - a[1]) * aby) / l2))
+        q = (a[0] + abx * u, a[1] + aby * u)
+        d = math.hypot(c[0] - q[0], c[1] - q[1])
+        if d < best_d:
+            best_d, best_q, best_t = d, q, (i + u) / n
+    if e.kind == "curve":
+        t = best_t
+        for _ in range(4):
+            B = bez_pt(e.pts, t)
+            D1 = bez_deriv(e.pts, t)
+            D2 = _bez_d2(e.pts, t)
+            f = (B[0] - c[0]) * D1[0] + (B[1] - c[1]) * D1[1]
+            fp = D1[0] * D1[0] + D1[1] * D1[1] + (B[0] - c[0]) * D2[0] + (B[1] - c[1]) * D2[1]
+            if abs(fp) < 1e-9:
+                break
+            t2 = min(1.0, max(0.0, t - f / fp))
+            B2 = bez_pt(e.pts, t2)
+            d2 = math.hypot(c[0] - B2[0], c[1] - B2[1])
+            if d2 > best_d + 1e-9:
+                break
+            t, best_q, best_d = t2, B2, d2
+    return best_d, best_q
+
+
+def _fit_path(pts: List[Pt], t_start: Optional[Pt], t_end: Optional[Pt], tol: float) -> List[Cubic]:
+    """Кубики Безье вдоль трассы. t_start, t_end: касательные вперёд по пути (None: по точкам)."""
+    p: List[Pt] = [pts[0]]
+    for q in pts[1:]:
+        if dist(q, p[-1]) > 1e-6:
+            p.append(q)
+    if len(p) < 2:
+        return []
+    chord = vsub(p[-1], p[0])
+    L = math.hypot(chord[0], chord[1])
+    straight = len(p) == 2 or (
+        L > 1e-9 and all(abs(vcross(chord, vsub(q, p[0]))) / L <= tol for q in p[1:-1]))
+    if straight and L > 1e-9:
+        u = (chord[0] / L, chord[1] / L)
+        if (t_start is None or abs(vcross(t_start, u)) < 0.05) and (t_end is None or abs(vcross(t_end, u)) < 0.05):
+            return [line_cubic(p[0], p[-1])]
+    t1 = t_start or vunit(vsub(p[1], p[0])) or (1.0, 0.0)
+    te = t_end or vunit(vsub(p[-1], p[-2])) or (1.0, 0.0)
+    out: List[Cubic] = []
+    _fit_cubic(p, t1, (-te[0], -te[1]), tol, out)
+    return out
+
+
+def _arc_cubics(C: Pt, rho: float, P: Pt, t: Pt, sigma: int, theta: float) -> List[Cubic]:
+    """Дуга окружности (центр C, радиус rho) от точки P с касательной t, поворот на theta (sigma=+-1: сторона)."""
+    n = max(1, int(math.ceil(theta / (math.pi / 2) - 1e-9)))
+    d = theta / n
+    k = 4.0 / 3.0 * math.tan(d / 4.0) * rho
+    ca, sa = math.cos(sigma * d), math.sin(sigma * d)
+    out: List[Cubic] = []
+    p0, t0 = P, t
+    for _ in range(n):
+        r = (p0[0] - C[0], p0[1] - C[1])
+        p3 = (C[0] + r[0] * ca - r[1] * sa, C[1] + r[0] * sa + r[1] * ca)
+        t3 = (t0[0] * ca - t0[1] * sa, t0[0] * sa + t0[1] * ca)
+        out.append((p0, (p0[0] + t0[0] * k, p0[1] + t0[1] * k), (p3[0] - t3[0] * k, p3[1] - t3[1] * k), p3))
+        p0, t0 = p3, t3
+    return out
+
+
+@dataclass(eq=False)
+class _Link:
+    """Готовый участок оси, соединяющий конец штриха со стыком."""
+    cubics: List[Cubic]
+    tag: str = "ext"
+    prof: List[Tuple[Pt, float]] = field(default_factory=list)  # (точка оси, толщина) по радиусу вписанного круга
+    cut: Optional[Pt] = None  # перед присоединением ось штриха обрезается в этой точке (участок заменяется)
+    how: str = ""  # способ: 'oval' (дуга чаши до стойки) или 'medial' (середина контура)
+
+    @property
+    def end(self) -> Pt:
+        return self.cubics[-1][3]
+
+
 class _Connector:
     G1_DEG = 20.0  # концы почти продолжают друг друга: плавное соединение
 
@@ -1600,6 +1896,7 @@ class _Connector:
         self.corners: List[Tuple[Pt, End, End]] = []
         self.polys: Dict[int, List[Pt]] = {}
         self.ink = {id(s): {c for p in s.pieces for c in (p.a.contour, p.b.contour)} for s in self.strokes}
+        self._memo: Dict[tuple, Optional[_Link]] = {}  # результаты трассировки: plan() зовётся несколько раз
 
     def record_cap(self, e: "End", h) -> None:
         """Торец, в который упирается конец оси: лента режется по его линии, а не перпендикулярно оси."""
@@ -1722,6 +2019,390 @@ class _Connector:
             return None
         return c
 
+
+    # --- срединная ось по настоящему контуру -----------------------------------------
+    def _sites(self, c: Pt, cap: float):
+        """Ближайшие к c точки контура по одной на ребро: [(расстояние, точка, ребро)] по возрастанию."""
+        res = []
+        for e in self.a.edges:
+            bb = e.bbox
+            dx = max(bb[0] - c[0], 0.0, c[0] - bb[2])
+            dy = max(bb[1] - c[1], 0.0, c[1] - bb[3])
+            if dx * dx + dy * dy > cap * cap:
+                continue
+            d, q = _edge_nearest(e, c)
+            if d <= cap:
+                res.append((d, q, e))
+        res.sort(key=lambda s: s[0])
+        return res
+
+    def _snap(self, c: Pt, t: Pt, cap: float, iters: int = 8):
+        """Сдвигает c вдоль линии «правая точка контура - левая точка контура», пока расстояния
+        до контура слева и справа от направления t не сравняются: (c, dl, dr, sites) или None."""
+        for _ in range(iters):
+            S = self._sites(c, cap)
+            left = right = None
+            for d, q, _e in S:
+                cr = vcross(t, vsub(q, c))
+                if abs(cr) < 0.25 * d:  # точка впереди или позади, а не сбоку
+                    continue
+                if cr > 0:
+                    if left is None:
+                        left = (d, q)
+                elif right is None:
+                    right = (d, q)
+                if left is not None and right is not None:
+                    break
+            if left is None or right is None:
+                return None
+            dl, ql = left
+            dr, qr = right
+            if abs(dl - dr) < 0.03:
+                return c, dl, dr, S
+            u = vunit(vsub(ql, qr))
+            if u is None:
+                return None
+            den = vdot(u, vsub(ql, c)) / dl + vdot(u, vsub(c, qr)) / dr
+            if den < 0.15:
+                return None
+            step = max(-0.35 * cap, min(0.35 * cap, (dl - dr) / den))
+            c = (c[0] + u[0] * step, c[1] + u[1] * step)
+        S = self._sites(c, cap)
+        left = right = None
+        for d, q, _e in S:
+            cr = vcross(t, vsub(q, c))
+            if abs(cr) < 0.25 * d:
+                continue
+            if cr > 0 and left is None:
+                left = d
+            elif cr < 0 and right is None:
+                right = d
+        if left is None or right is None or abs(left - right) > 0.3:
+            return None
+        return c, left, right, S
+
+    @staticmethod
+    def _wall_ahead(S, c: Pt, nt: Pt, r: float) -> bool:
+        """Круг радиуса r с центром c упёрся в контур впереди (развилка или торец)."""
+        for d, q, _e in S:
+            if d > 1.02 * r + 0.2:
+                break
+            if vdot(vsub(q, c), nt) > 0.75 * d:
+                return True
+        return False
+
+    def trace_medial(self, start: Pt, t: Pt, w: float, maxlen: float, stop=None):
+        """Ведёт ось от start по направлению t по настоящей середине контура.
+        Возвращает (точки, причина, радиусы): 'fork' (впереди стенка: стык или торец), 'stop'
+        (сработал stop(c, касательная)), 'len' (длина исчерпана) или 'fail' (середина потеряна).
+        Радиус вписанного круга в каждой точке даёт настоящую толщину штриха в стыке."""
+        cap = 1.7 * w
+        h = max(1.5, 0.05 * w)
+        s0 = self._snap(start, t, cap)
+        if s0 is None:
+            return [], "fail", []
+        c, dl, dr, _S = s0
+        r = 0.5 * (dl + dr)
+        pts: List[Pt] = [c]
+        rad: List[float] = [r]
+        length = 0.0
+        while length < maxlen:
+            pred = (c[0] + t[0] * h, c[1] + t[1] * h)
+            s1 = self._snap(pred, t, cap)
+            if s1 is None:
+                return pts, "fail", rad
+            c1, dl, dr, S = s1
+            nt = vunit(vsub(c1, c))
+            r1 = 0.5 * (dl + dr)
+            if nt is None or vdot(nt, t) < 0.7 or abs(r1 - r) > 1.3 * h or not self.inside(c1):
+                return pts, "fail", rad  # перескочили на другую ветвь или вышли из материала
+            if length >= 0.6 * r and self._wall_ahead(S, c1, nt, r1):
+                lo, hi, r_hi = c, c1, r1  # уточняем место, где круг касается стенки
+                for _ in range(6):
+                    sm = self._snap(lerp(lo, hi, 0.5), t, cap)
+                    if sm is None:
+                        break
+                    if self._wall_ahead(sm[3], sm[0], nt, 0.5 * (sm[1] + sm[2])):
+                        hi, r_hi = sm[0], 0.5 * (sm[1] + sm[2])
+                    else:
+                        lo = sm[0]
+                pts.append(hi)
+                rad.append(r_hi)
+                return pts, "fork", rad
+            pts.append(c1)
+            rad.append(r1)
+            length += dist(c, c1)
+            c, t, r = c1, nt, r1
+            if stop is not None and stop(c, t):
+                return pts, "stop", rad
+        return pts, "len", rad
+
+
+    # --- продолжение кривой чаши до оси стойки ---------------------------------------
+    def _inward_points(self, e: "End", W: float, ends: Optional[List["End"]]) -> List[Pt]:
+        """Точки оси от конца e вглубь штриха на длину W. Короткий штрих (кусок чаши между узлами контура)
+        продолжается на соседний, если стык с ним почти гладкий."""
+        pts: List[Pt] = [e.pos]
+        length = 0.0
+        cur = e
+        seen = {id(e.s)}
+        for _hop in range(4):
+            poly = self.polys[id(cur.s)]
+            seq = list(reversed(poly)) if cur.idx == 1 else list(poly)
+            for q in seq[1:]:
+                length += dist(pts[-1], q)
+                pts.append(q)
+                if length >= W:
+                    return pts
+            far = next((x for x in (ends or []) if x.s is cur.s and x.idx != cur.idx), None)
+            if far is None:
+                break
+            nxt, best = None, 1e18
+            for x in ends or []:
+                if x.s is cur.s or id(x.s) in seen or x.used:
+                    continue
+                g = dist(x.pos, far.pos)
+                if g > 0.7 * max(far.w, x.w) or abs(angle_deg(far.t, (-x.t[0], -x.t[1]))) > 35.0:
+                    continue
+                if g > 1e-6 and vdot(far.t, vsub(x.pos, far.pos)) < -0.1 * g:
+                    continue
+                if g < best:
+                    nxt, best = x, g
+            if nxt is None:
+                break
+            seen.add(id(nxt.s))
+            cur = nxt
+        return pts
+
+    def continue_arm(self, e: "End", s2: "Stroke", ends: Optional[List["End"]]) -> Optional[_Link]:
+        key = ("cont", id(e), id(s2))
+        if key not in self._memo:
+            self._memo[key] = self._continue_arm(e, s2, ends)
+        return self._memo[key]
+
+    def _continue_arm(self, e: "End", s2: "Stroke", ends: Optional[List["End"]]) -> Optional[_Link]:
+        """Чаша b, d, p, q: от вершины чаши (где ось идёт перпендикулярно стойке) ось продолжается одной
+        дугой окружности и садится на ось стойки под углом prm.arm_angle. Участок оси от вершины до
+        конца дуги заменяется: у выреза измеренная ось закручивается внутрь (вырез тянет середину
+        между контурами), а чаша, как её рисует человек, остаётся овалом. Замена допускается,
+        пока дуга отходит от измеренной оси не больше чем на 0.2 толщины."""
+        prm = self.prm
+        poly = self.polys[id(s2)]
+        if dist_to_polyline(e.pos, poly) < 0.25 * e.w:
+            return None
+        A1 = poly[0]
+        ul = vunit(vsub(poly[-1], poly[0]))
+        if ul is None:
+            return None
+        nl = (-ul[1], ul[0])
+        Ls = dist(poly[0], poly[-1])
+        own = self.polys[id(e.s)]
+        chain = self._inward_points(e, 4.0 * e.w, ends)
+        if len(chain) < 8:
+            return None
+        # вершина чаши: первая точка пути от конца, где ход оси становится перпендикулярным стойке
+        g = [vdot(vsub(chain[i + 1], chain[i]), ul) for i in range(len(chain) - 1)]
+        apex = None
+        for i in range(1, len(g)):
+            if g[i] * g[0] <= 0.0:
+                apex = i
+                break
+        if apex is None:
+            return None
+        Q = chain[apex]
+        if dist_to_polyline(Q, own) > 0.5:
+            return None  # вершина на соседнем штрихе (чаша разорвана): отрезать нечего
+        old = chain[:apex + 1]  # заменяемый участок: от конца дуги до вершины
+        if sum(dist(a_, b_) for a_, b_ in zip(old, old[1:])) > 2.5 * e.w:
+            return None
+        tq = vunit(vsub(chain[apex - 1], chain[min(apex + 1, len(chain) - 1)]))  # ход в сторону конца дуги
+        if tq is None:
+            return None
+        # к центру кривизны: сторона, куда изгибается чаша за вершиной
+        n0 = (-tq[1], tq[0])
+        far = chain[min(len(chain) - 1, apex + 6)]
+        n = n0 if vdot(vsub(far, Q), n0) >= 0 else (-n0[0], -n0[1])
+        sigma = 1 if vcross(tq, n) > 0 else -1
+        sdq = vdot(vsub(Q, A1), nl)
+        # угол поворота: на оси стойки ход составляет с ней угол arm_angle
+        target = math.sin(math.radians(max(10.0, min(80.0, prm.arm_angle))))
+
+        def f_inc(th: float) -> float:
+            h = (tq[0] * math.cos(th) + n[0] * math.sin(th), tq[1] * math.cos(th) + n[1] * math.sin(th))
+            return abs(vdot(h, nl)) - target
+
+        lo, hi = 0.0, math.radians(100.0)
+        if f_inc(lo) <= 0.0 or f_inc(hi) >= 0.0:
+            return None  # вершина уже положе нужного угла или повернуть до него нельзя
+        for _ in range(40):
+            mid = 0.5 * (lo + hi)
+            if f_inc(mid) > 0.0:
+                lo = mid
+            else:
+                hi = mid
+        theta = 0.5 * (lo + hi)
+        den = math.sin(theta) * vdot(tq, nl) + (1.0 - math.cos(theta)) * vdot(n, nl)
+        if abs(den) < 1e-9 or -sdq / den <= 0.0:
+            return None
+        rho = -sdq / den
+        if not (0.5 * e.w <= rho <= 25.0 * e.w):
+            return None
+        C = (Q[0] + n[0] * rho, Q[1] + n[1] * rho)
+        cubics = _arc_cubics(C, rho, Q, tq, sigma, theta)
+        X = (Q[0] + rho * (math.sin(theta) * tq[0] + (1 - math.cos(theta)) * n[0]),
+             Q[1] + rho * (math.sin(theta) * tq[1] + (1 - math.cos(theta)) * n[1]))
+        cubics[-1] = (cubics[-1][0], cubics[-1][1], cubics[-1][2], X)
+        al = vdot(vsub(X, A1), ul)
+        if not (-0.02 * Ls <= al <= 1.02 * Ls):
+            return None
+        w2 = _width_at(s2, X)
+        if rho * theta > 3.0 * max(e.w, w2):
+            return None
+        samples = [q for c in cubics for q in flatten(c, 16)]
+        # дуга не должна уходить от измеренной оси (на заменяемом участке) дальше 0.15 толщины
+        if max(dist_to_polyline(q, samples) for q in old) > 0.2 * e.w:
+            return None
+        if not all(self.inside(q) for q in samples[1:-1]):
+            return None
+        return _Link(cubics, "mid", [(q, e.w) for q in samples[1::2]], cut=Q, how="oval")
+
+    def medial_arm(self, e: "End", s2: "Stroke") -> Optional[_Link]:
+        """Конец дуги e доводится до оси прямой стойки s2 по середине контура. Ось дуги идёт
+        вдоль настоящей срединной линии между вырезом и чашей, затем по касательной входит в
+        ось стойки. Если середина теряется, возвращает None (останутся прежние способы)."""
+        key = ("arm", id(e), id(s2))
+        if key not in self._memo:
+            self._memo[key] = self._medial_arm(e, s2)
+        return self._memo[key]
+
+    def _medial_arm(self, e: "End", s2: "Stroke") -> Optional[_Link]:
+        poly = self.polys[id(s2)]
+        if dist_to_polyline(e.pos, poly) < 0.25 * e.w:
+            return None  # конец уже лежит на оси цели (дуга продолжает стойку): это G1, а не T
+        w2 = _width_at(s2, e.pos)
+        wmax = max(e.w, w2)
+        pts, why, rad = self.trace_medial(e.pos, e.t, wmax, 3.0 * wmax,
+                                          lambda c, nt: dist_to_polyline(c, poly) <= 0.25)
+        if why not in ("fork", "stop") or len(pts) < 2:
+            return None
+        if dist(pts[0], e.pos) > 0.2 * e.w:
+            return None  # ось дуги у конца ушла от середины: доверять трассе нельзя
+        F = pts[-1]
+        dF = dist_to_polyline(F, poly)
+        if dF > 0.4 * w2 + 1.0:
+            return None  # круг упёрся в стенку не у этой стойки
+        X = F
+        if dF > 0.25:
+            tF = vunit(vsub(pts[-1], pts[max(0, len(pts) - 3)])) or e.t
+            best = None
+            for a_, b_ in zip(poly, poly[1:]):  # продолжение по касательной до оси стойки
+                r_ = _seg_ray(F, tF, a_, b_)
+                if r_ is not None and 0.0 <= r_[1] <= 1.0 and r_[0] >= 0.0 and (best is None or r_[0] < best[0]):
+                    best = r_
+            if best is not None and best[0] <= 0.5 * w2 + 1.0:
+                X = (F[0] + tF[0] * best[0], F[1] + tF[1] * best[0])
+            else:
+                X = min((_nearest_on_segment(F, a_, b_) for a_, b_ in zip(poly, poly[1:])),
+                        key=lambda q: dist(q, F))
+            if dist(F, X) > 0.5 * w2 or not self.seg_inside(F, X, 3):
+                return None
+        path = [e.pos] + pts[1:] + ([X] if dist(X, F) > 0.05 else [])
+        cubics = _fit_path(path, e.t, None, max(0.35, 0.0005 * self.upm))
+        if not cubics or not all(self.inside(q) for c in cubics for q in flatten(c, 10)[1:-1]):
+            return None
+        prof = [(q, 2.0 * r) for q, r in zip(pts[1:], rad[1:])]
+        if dist(X, F) > 0.05:
+            prof.append((X, 2.0 * rad[-1]))
+        return _Link(cubics, "mid", prof, how="medial")
+
+    def _fork_partner(self, e1: "End", e2: "End", X: Pt, ends: Optional[List["End"]]) -> bool:
+        """Есть ли у узла L третий свободный конец (перекладина e, ножка k): тогда узел остаётся
+        развилкой Y, а не гладким мостом между двумя дугами."""
+        for e3 in ends or []:
+            if e3.used or e3.terminal or e3.s in (e1.s, e2.s):
+                continue
+            g = vsub(X, e3.pos)
+            along, perp = vdot(g, e3.t), abs(vcross(g, e3.t))
+            if -0.3 * e3.w <= along <= self.prm.ext_factor * max(e3.w, e1.w, e2.w) / 0.5 and perp <= 0.4 * e3.w:
+                return True
+        return False
+
+    def medial_bridge(self, e1: "End", e2: "End") -> Optional[_Link]:
+        """Два конца дуг одной чаши (разрыв у узла контура): ось ведётся от e1 по середине контура
+        до e2. Это замена угла L и «усов» G1, когда обе дуги лежат на одной срединной линии."""
+        key = ("bridge", id(e1), id(e2))
+        if key not in self._memo:
+            self._memo[key] = self._medial_bridge(e1, e2)
+        return self._memo[key]
+
+    def _medial_bridge(self, e1: "End", e2: "End") -> Optional[_Link]:
+        wmax = max(e1.w, e2.w)
+        target = e2.pos
+        h = max(1.5, 0.05 * wmax)
+
+        def stop(c, nt):
+            return dist(c, target) <= 1.5 * h or vdot(vsub(target, c), nt) <= 0.0
+
+        pts, why, rad = self.trace_medial(e1.pos, e1.t, wmax, 2.5 * wmax + dist(e1.pos, e2.pos), stop)
+        if why != "stop" or len(pts) < 2:
+            return None
+        if dist(pts[0], e1.pos) > 0.2 * e1.w or dist(pts[-1], target) > 0.35 * wmax:
+            return None
+        tin = vunit(vsub(target, pts[-1])) or e2.t
+        if abs(angle_deg(tin, (-e2.t[0], -e2.t[1]))) > 30.0:
+            return None  # подход к e2 не вдоль её оси: это другая ветвь
+        cubics = _fit_path([e1.pos] + pts[1:] + [target], e1.t, (-e2.t[0], -e2.t[1]),
+                           max(0.35, 0.0005 * self.upm))
+        if not cubics or not all(self.inside(q) for c in cubics for q in flatten(c, 10)[1:-1]):
+            return None
+        return _Link(cubics, "mid", [(q, 2.0 * r) for q, r in zip(pts[1:], rad[1:])])
+
+    @staticmethod
+    def trim_axis(e: "End", Q: Pt) -> None:
+        """Обрезает ось штриха с конца e в точке Q (деление кубики де Кастельжо)."""
+        axis, tags = e.s.axis, e.s.tags
+        best = None
+        for i, c in enumerate(axis):
+            for k in range(0, 49):
+                u = k / 48.0
+                d = dist(bez_pt(c, u), Q)
+                if best is None or d < best[0]:
+                    best = (d, i, u)
+        d, i, u = best
+        c = axis[i]
+        # де Кастельжо: левая (0..u) и правая (u..1) части
+        p01, p12, p23 = lerp(c[0], c[1], u), lerp(c[1], c[2], u), lerp(c[2], c[3], u)
+        p012, p123 = lerp(p01, p12, u), lerp(p12, p23, u)
+        m_ = lerp(p012, p123, u)
+        left, right = (c[0], p01, p012, m_), (m_, p123, p23, c[3])
+        def tiny(q: Cubic) -> bool:
+            return dist(q[0], q[3]) < 0.5 and dist(q[0], q[1]) < 0.5 and dist(q[0], q[2]) < 0.5
+
+        if e.idx == 1:
+            keep = [] if tiny(left) else [left]
+            e.s.axis = axis[:i] + keep
+            e.s.tags = tags[:i] + [tags[i]] * len(keep)
+        else:
+            keep = [] if tiny(right) else [right]
+            e.s.axis = keep + axis[i + 1:]
+            e.s.tags = [tags[i]] * len(keep) + tags[i + 1:]
+
+    @staticmethod
+    def apply_link(e: "End", link: _Link) -> None:
+        """Приставляет участок link (от e.pos наружу) к оси штриха на нужном конце.
+        Толщина вдоль участка (радиус вписанного круга) дописывается в профиль штриха."""
+        e.s.prof.extend(link.prof)
+        if link.cut is not None:
+            _Connector.trim_axis(e, link.cut)
+        if e.idx == 1:
+            for c in link.cubics:
+                e.s.axis.append(c)
+                e.s.tags.append(link.tag)
+        else:
+            for c in link.cubics:
+                e.s.axis.insert(0, _reverse_cubic(c))
+                e.s.tags.insert(0, link.tag)
+
     def remaining(self, e: End) -> float:
         """Сколько самой длинной стороны штриха осталось за концом оси. Если ребро-сторона идёт
         дальше конца оси (стойка b, d, p, q ниже чаши), штрих идёт дальше, и угол L с ним
@@ -1795,8 +2476,10 @@ class _Connector:
         # иначе кривой пришлось бы сначала спуститься, а потом вернуться (волна)
         cos_t = max(-1.0, min(1.0, vdot(e.t, d_t)))
         theta = math.acos(cos_t)
+        # Круговая конструкция устойчива только в умеренном диапазоне углов.
+        # Вне него вызывающий код пробует corridor_path(), а не прямой fallback.
         if theta < math.radians(8) or theta > math.radians(40):
-            return None  # конец подходит к стойке под большим углом: короткий прямой T, а не петля
+            return None
         R = D / (1.0 - cos_t)
         sh = R * math.sin(theta)
         exact = sh <= 1.5 * D + 0.3 * e.w
@@ -1953,7 +2636,7 @@ class _Connector:
         cands.sort(key=lambda c: c[1])
         return cands
 
-    def plan(self, cands: list, banned: set) -> list:
+    def plan(self, cands: list, banned: set, ends: Optional[List[End]] = None) -> list:
         """Выбор соединений без изменения осей. Дешёвые идут первыми; конец служит одному соединению."""
         prm = self.prm
         used: set = set()
@@ -1963,25 +2646,52 @@ class _Connector:
             if id(e1) in used or (e2 is not None and id(e2) in used) or (id(e1), id(e2)) in banned:
                 continue
             sup = self.support(X, e1.w, wm if e2 is None else e2.w, sin_t)
+            path: Optional[_Link] = None
+            if kind in ("L", "G1") and prm.medial_joints and e2 is not None \
+                    and e1.s.kind == "arc" and e2.s.kind == "arc" \
+                    and not self._fork_partner(e1, e2, X, ends):
+                # две дуги одной чаши, разорванные у узла контура: ось по середине контура вместо «уса»
+                path = self.medial_bridge(e1, e2)
+                if path is not None:
+                    kind, X = "G1", lerp(e1.pos, e2.pos, 0.5)
             if kind != "G1" and sup < prm.min_support:
                 continue  # нет опоры в существующем контуре (у гладкого продолжения G1 углов нет)
-            path = None
-            if kind == "T" and e1.s.kind == "arc" and s2.kind == "line":
-                path = self.tangent_merge(e1, s2)  # дуга входит в стойку по касательной
-                if path is not None:
-                    X = path[3]
-            if path is not None:
+            if kind == "T":
+                # Т-стык с участием дуги должен быть плавным. Раньше прямая e1->X
+                # проходила проверку seg_inside(), после чего extend() добавлял её
+                # даже при неудаче tangent_merge(). Отсюда появлялись прямые участки
+                # между чашей и стойкой в b/d/p/q.
+                curved_join = e1.s.kind == "arc" or s2.kind == "arc"
+                arc_to_stem = e1.s.kind == "arc" and s2.kind == "line"
+                if arc_to_stem and prm.arm_continue:
+                    path = self.continue_arm(e1, s2, ends)  # продолжение кривой чаши
+                if path is None and arc_to_stem and prm.medial_joints:
+                    path = self.medial_arm(e1, s2)  # ось по настоящей середине контура
+                if path is None and arc_to_stem:
+                    cub = self.tangent_merge(e1, s2)
+                    path = _Link([cub]) if cub is not None else None
+                if path is None and curved_join:
+                    cub = self.corridor_path(e1, X, s2)
+                    path = _Link([cub]) if cub is not None else None
+                if curved_join:
+                    # Не подменяем неудачную кривую прямым отрезком. Лучше оставить
+                    # конец открытым, чем экспортировать геометрически неверное ребро.
+                    if path is None:
+                        continue
+                    X = path.end
+                elif not self.seg_inside(e1.pos, X, 3):
+                    # Для прямого штриха прямое соединение допустимо только если
+                    # оно лежит в материале; иначе ищем центральную линию прохода.
+                    cub = self.foot_link(e1, s2) or self.corridor_path(e1, X, s2)
+                    if cub is None:
+                        continue
+                    path = _Link([cub])
+                    X = path.end
+            elif path is not None:
                 pass
             elif kind == "G1":
                 if not self.seg_inside(e1.pos, e2.pos):
                     continue
-            elif kind == "T" and not self.seg_inside(e1.pos, X, 3):
-                # прямая по касательной выходит из материала: кратчайшая прямая к оси цели,
-                # а если и она не годится, путь по середине прохода
-                path = self.foot_link(e1, s2) or self.corridor_path(e1, X, s2)
-                if path is None:
-                    continue
-                X = path[3]
             elif not self.seg_inside(e1.pos, X, 3) or (e2 is not None and not self.seg_inside(e2.pos, X, 3)):
                 continue
             if kind != "G1" and path is None and not self.near_ink(X, 0.15 * min(e1.w, wm)):
@@ -1990,6 +2700,19 @@ class _Connector:
             if e2 is not None:
                 used.add(id(e2))
             res.append((kind, cost, e1, e2, X, s2, wm, sin_t, sup, path))
+        # два рукава на одну стойку (верх и низ чаши) строятся одним способом: иначе чаша несимметрична
+        by_stem: Dict[int, List[int]] = {}
+        for i, r in enumerate(res):
+            if r[0] == "T" and r[9] is not None and r[9].how in ("oval", "medial"):
+                by_stem.setdefault(id(r[5]), []).append(i)
+        for idxs in by_stem.values():
+            if len({res[i][9].how for i in idxs}) > 1:
+                for i in idxs:
+                    kind, cost, e1, e2, X, s2, wm, sin_t, sup, path = res[i]
+                    if path.how == "oval":
+                        alt = self.medial_arm(e1, s2)
+                        if alt is not None:
+                            res[i] = (kind, cost, e1, e2, alt.end, s2, wm, sin_t, sup, alt)
         return res
 
     def reroute(self, plan: list, cands: list) -> set:
@@ -2032,34 +2755,27 @@ class _Connector:
             self.polys = {id(s): _axis_poly(s) for s in self.strokes}
         cands = self.candidates(ends)
         banned: set = set()
-        plan = self.plan(cands, banned)
+        plan = self.plan(cands, banned, ends)
         for _ in range(3):
             more = self.reroute(plan, cands) - banned
             if not more:
                 break
             banned |= more
-            plan = self.plan(cands, banned)
+            plan = self.plan(cands, banned, ends)
         for kind, cost, e1, e2, X, s2, wm, sin_t, sup, path in plan:
             if kind == "G1":
-                h = dist(e1.pos, e2.pos) / 3.0
-                c = (e1.pos, (e1.pos[0] + e1.t[0] * h, e1.pos[1] + e1.t[1] * h),
-                     (e2.pos[0] + e2.t[0] * h, e2.pos[1] + e2.t[1] * h), e2.pos)
-                if e1.idx == 1:
-                    e1.s.axis.append(c)
-                    e1.s.tags.append("bridge")
+                if path is not None:  # ось по середине контура между двумя дугами
+                    self.apply_link(e1, path)
                 else:
-                    e1.s.axis.insert(0, _reverse_cubic(c))
-                    e1.s.tags.insert(0, "bridge")
+                    h = dist(e1.pos, e2.pos) / 3.0
+                    c = (e1.pos, (e1.pos[0] + e1.t[0] * h, e1.pos[1] + e1.t[1] * h),
+                         (e2.pos[0] + e2.t[0] * h, e2.pos[1] + e2.t[1] * h), e2.pos)
+                    self.apply_link(e1, _Link([c], "bridge"))
                 e1.used = e2.used = True
                 self.joints.append(Joint("G1", X, [e1.s, e2.s], sup))
                 continue
             if path is not None:
-                if e1.idx == 1:
-                    e1.s.axis.append(path)
-                    e1.s.tags.append("ext")
-                else:
-                    e1.s.axis.insert(0, _reverse_cubic(path))
-                    e1.s.tags.insert(0, "ext")
+                self.apply_link(e1, path)
             else:
                 self.extend(e1, X)
             e1.used = True
@@ -3523,10 +4239,11 @@ class GlyphCanvas(QWidget):
                 col = self.axis_color(s)
                 tags = s.tags or ["fit"] * len(s.axis)
                 for c, tag in zip(s.axis, tags):
-                    pen = QPen(col if tag == "fit" else QColor(224, 128, 0))
+                    solid = tag in ("fit", "mid")  # mid: ось по середине контура в стыке
+                    pen = QPen(col if solid else QColor(224, 128, 0))
                     pen.setWidthF(3.4 if s is self.sel_stroke else 2.6)
                     pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-                    if tag != "fit":
+                    if not solid:
                         pen.setStyle(Qt.PenStyle.DashLine)
                     p.setPen(pen)
                     path = QPainterPath(self.tos(c[0]))
@@ -4180,6 +4897,22 @@ class MainWindow(QMainWindow):
         gj.addWidget(self._check(
             "join_axes", "Соединять оси в общую ось",
             "Выключено: показываются только оси отдельных штрихов."))
+        gj.addWidget(self._check(
+            "arm_continue", "Дуга входит в стойку по продолжению кривой чаши",
+            "Чаша b, d, p, q: от вершины чаши ось идёт одной дугой окружности и садится на ось стойки под\n"
+            "заданным углом, как её рисует человек. Чаша остаётся овалом, стойка прямой. Если вершины нет на этом\n"
+            "штрихе или дуга сильно уходит от измеренной оси, берётся следующий способ (по середине контура)."))
+        self._add_rows(gj, [
+            ("arm_angle", "Угол входа дуги чаши в стойку:",
+             "Чаша b, d, p, q: от вершины чаши ось идёт одной дугой окружности и садится на ось стойки\n"
+             "под этим углом. Меньше: положе, и дуга садится ниже по стойке; больше: круче и выше.",
+             10.0, 80.0, 1.0, "°", 0),
+        ])
+        gj.addWidget(self._check(
+            "medial_joints", "Стыки по настоящей середине контура",
+            "Запасной способ для дуги, входящей в стойку, и мост между дугами одной чаши у узла контура:\n"
+            "ось ведётся по линии, равноудалённой от контура с двух сторон (учитывая вырез между стойкой\n"
+            "и чашей). Выключено: прежние шаблонные кривые (дуга по касательной, середина прохода)."))
         self._add_rows(gj, [
             ("ext_factor", "Допуск на продление оси к стыку:",
              "Сколько непокрытого участка стыка разрешено продлить, в толщинах продлеваемого штриха\n"
